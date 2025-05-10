@@ -3,8 +3,20 @@
 from google.oauth2 import service_account
 from google.cloud import storage
 
-# class ServiceAccountCredentials:
-#     """ Create credentials """
+class ServiceAccountCredentials:
+    """Create credentials from service account JSON file."""
+
+    def __init__(self, credentials_path='credentials.json'):
+        self.__credentials_path = credentials_path
+        self.__credentials = self.__create_connection()
+
+    def __create_connection(self):
+        """ Make connection using service account"""
+        return service_account.Credentials.from_service_account_file(self.__credentials_path)
+
+    def get_credentials(self):
+        """ Return the connection object """
+        return self.__credentials
 
 class BucketConfig:
     """ Bucket config"""
@@ -14,11 +26,9 @@ class BucketConfig:
 
 class CloudStorage:
     """ CloudStorage helper class to perform creation and deletion of buckets """
-
-    def __init__(self, credentials_path='credentials.json'):
+    def __init__(self, credentials):
         # Initialize GCS client
-        self.__credentials = service_account.Credentials.from_service_account_file(credentials_path)
-        self.storage_client = storage.Client(credentials = self.__credentials)
+        self.storage_client = storage.Client(credentials=credentials)
 
     def create_bucket(self, bucket_name):
         """ Create a GCS Bucket if it doesn't exists """
@@ -47,10 +57,11 @@ class CloudStorage:
         print(f"Bucket {bucket_name} deleted.")
 
 if __name__ == "__main__":
-
     # Path to your credentials JSON file
-    BUCKET = CloudStorage()
-
+    CREDS = ServiceAccountCredentials().get_credentials()
+    BUCKET = CloudStorage(
+        credentials=CREDS
+    )
     BUCKET.create_bucket(
         bucket_name=BucketConfig.BUCKET_NAME
     )
