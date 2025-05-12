@@ -1,5 +1,7 @@
 """ Google Cloud Helper function """
 
+import os
+
 from google.oauth2 import service_account
 from google.cloud import storage
 
@@ -21,7 +23,6 @@ class ServiceAccountCredentials:
 class BucketConfig:
     """ Bucket config"""
     BUCKET_NAME = 'sj-json-bucket'
-    GCS_PREFIX = 'json_data/'
     LOCAL_JSON_FILE = 'raw-data/'
 
 class CloudStorage:
@@ -56,12 +57,34 @@ class CloudStorage:
         bucket.delete()
         print(f"Bucket {bucket_name} deleted.")
 
-if __name__ == "__main__":
-    # Path to your credentials JSON file
-    CREDS = ServiceAccountCredentials().get_credentials()
-    BUCKET = CloudStorage(
-        credentials=CREDS
-    )
-    BUCKET.create_bucket(
-        bucket_name=BucketConfig.BUCKET_NAME
-    )
+    def read_bucket(self, bucket_name, prefix = None):
+        """ Read contents from the bucket_name """
+        bucket = self.storage_client.bucket(bucket_name)
+        blobs = bucket.list_blobs(prefix=prefix)
+        return blobs
+
+    def insert_blob(self, bucket_name: str, local_dir: str):
+        """
+            Upload multiple JSON files from a local directory to a GCS bucket.
+
+            Args:
+                bucket_name (str): Name of the target bucket.
+                local_dir (str): Local directory containing JSON files.
+        """
+        bucket = self.storage_client.bucket(bucket_name)
+        if not os.path.exists(local_dir):
+            print(f"Local directory '{local_dir}' not found.")
+            return
+        files_uploaded = 0
+        for file_name in os.listdir(local_dir):
+            if file_name.endswith('.json'):
+                local_path = os.path.join(local_dir, file_name)
+                blob = bucket.blob(file_name)
+                blob.upload_from_filename(local_path)
+                print(f"Uploaded: {file_name} → gs://{bucket_name}/{file_name}")
+                files_uploaded += 1
+
+        if files_uploaded == 0:
+            print("No JSON files found to upload.")
+        else:
+            print(f"Uploaded {files_uploaded} file(s) successfully.")
