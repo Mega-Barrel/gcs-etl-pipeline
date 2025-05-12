@@ -2,3 +2,9 @@
 
 # env file
 credentials.json
+
+# pycache
+__pycache__
+
+# dataset
+raw-data/
