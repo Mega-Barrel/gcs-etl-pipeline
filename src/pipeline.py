@@ -62,10 +62,13 @@ class Load:
 
     def execute(self, destination_blob_name="processed/cleaned_data.json"):
         """ Loads the final data to Cloud Storage Bucket"""
-        bucket = self.storage_client.bucket(self.bucket_name)
-        blob = bucket.blob(destination_blob_name)
-        blob.upload_from_string(
-            data=json.dumps(self.data, indent=4),
-            content_type='application/json'
-        )
-        print(f"[Load] Uploaded processed data to gs://{self.bucket_name}/{destination_blob_name}")
+        if not self.data:
+            print(f"No data found, skipping the Load stage to gs://{self.bucket_name}/")
+        else:
+            bucket = self.storage_client.bucket(self.bucket_name)
+            blob = bucket.blob(destination_blob_name)
+            blob.upload_from_string(
+                data=json.dumps(self.data, indent=4),
+                content_type='application/json'
+            )
+            print(f"[Load] Uploaded processed data to gs://{self.bucket_name}/{destination_blob_name}")
